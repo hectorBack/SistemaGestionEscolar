@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace EscolarApi.models;
+
+public partial class Materias
+{
+    public int Id { get; set; }
+
+    public string Nombre { get; set; } = null!;
+
+    public int Creditos { get; set; }
+
+    public string? Descripcion { get; set; }
+
+    public virtual ICollection<Cursos> Cursos { get; set; } = new List<Cursos>();
+}

@@ -1,0 +1,4 @@
+# Ignorar archivos de configuración de desarrollo
+appsettings.Development.json
+appsettings.json
+Program.cs
