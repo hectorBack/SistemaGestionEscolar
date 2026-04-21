@@ -11,6 +11,7 @@ namespace EscolarApi.DTOs
         public string Matricula { get; set; } = null!;
         public string NombreCompleto { get; set; } = null!;
         public string Email { get; set; } = null!;
-        public int Edad { get; set; } // Podrías calcularla en el Service
+        public DateTime FechaNacimiento { get; set; }
+        public int Edad { get; set; }
     }
 }

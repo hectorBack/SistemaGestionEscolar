@@ -31,6 +31,21 @@ namespace EscolarApi.Services
             return await _context.SaveChangesAsync() > 0;
         }
 
+        public int CalcularEdad(DateTime fechaNacimiento)
+        {
+            var hoy = DateTime.Today;
+            var edad = hoy.Year - fechaNacimiento.Year;
+
+            // Si el mes actual es menor al de nacimiento, 
+            // o es el mismo mes pero el día actual es menor, aún no cumple años.
+            if (fechaNacimiento.Date > hoy.AddYears(-edad))
+            {
+                edad--;
+            }
+
+            return edad;
+        }
+
         public async Task<bool> CambiarPassword(int alumnoId, string nuevaPassword)
         {
             var alumno = await _context.Alumnos.FindAsync(alumnoId);
@@ -39,7 +54,7 @@ namespace EscolarApi.Services
             var usuario = await _context.Usuarios.FindAsync(alumno.UsuarioId);
             if (usuario == null) return false;
 
-            usuario.Password = nuevaPassword; // Recuerda encriptar esto en el futuro
+            usuario.Password = BCrypt.Net.BCrypt.HashPassword(nuevaPassword);
             _context.Usuarios.Update(usuario);
 
             return await _context.SaveChangesAsync() > 0;
@@ -47,23 +62,40 @@ namespace EscolarApi.Services
 
         public async Task<AlumnoResponse> CrearAlumno(AlumnoRequest request)
         {
-            // 1. Iniciamos una transacción para asegurar que se creen ambos o ninguno
+            // 1. Validar si el email ya existe en la tabla de Usuarios
+            var emailExiste = await _context.Usuarios.AnyAsync(u => u.Email == request.Email);
+            if (emailExiste)
+            {
+                // Lanzamos una excepción personalizada o manejamos el error
+                throw new Exception("El correo electrónico ya se encuentra registrado.");
+            }
+
+            var matriculaExiste = await _context.Alumnos.AnyAsync(a => a.Matricula == request.Matricula);
+            if (matriculaExiste)
+            {
+                throw new Exception("La matrícula ya pertenece a otro alumno.");
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // 2. Crear la entidad Usuario primero
+                // HASHEAR la contraseña antes de crear el objeto Usuario
+                // El 'Salt' se genera automáticamente dentro del Hash
+                string passwordHasheada = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+                // 2. Crear la entidad Usuario
                 var nuevoUsuario = new Usuarios
                 {
                     Email = request.Email,
-                    Password = request.Password, // Nota: En producción, usa un Hash aquí
+                    Password = passwordHasheada,
                     Rol = "Alumno"
                 };
 
                 _context.Usuarios.Add(nuevoUsuario);
                 await _context.SaveChangesAsync();
 
-                // 3. Crear la entidad Alumno vinculada al UsuarioId recién generado
+                // 3. Crear la entidad Alumno vinculada
                 var nuevoAlumno = new Alumnos
                 {
                     Matricula = request.Matricula,
@@ -76,23 +108,21 @@ namespace EscolarApi.Services
                 _context.Alumnos.Add(nuevoAlumno);
                 await _context.SaveChangesAsync();
 
-                // 4. Confirmar cambios en la base de datos
                 await transaction.CommitAsync();
 
-                // 5. Mapear a Response para devolver al controlador
                 return new AlumnoResponse
                 {
                     Id = nuevoAlumno.Id,
                     Matricula = nuevoAlumno.Matricula,
                     NombreCompleto = $"{nuevoAlumno.Nombre} {nuevoAlumno.Apellido}",
                     Email = nuevoUsuario.Email,
-                    Edad = DateTime.Today.Year - nuevoAlumno.FechaNacimiento.Year // Cálculo simple
+                    Edad = CalcularEdad(nuevoAlumno.FechaNacimiento)
                 };
             }
             catch (Exception)
             {
                 await transaction.RollbackAsync();
-                throw; // O manejar un error personalizado
+                throw;
             }
         }
 
@@ -147,23 +177,26 @@ namespace EscolarApi.Services
                 Id = a.Id,
                 Matricula = a.Matricula,
                 NombreCompleto = $"{a.Nombre} {a.Apellido}",
-                Email = a.Usuario?.Email ?? "Sin correo"
+                Email = a.Usuario?.Email ?? "Sin correo",
+                Edad = CalcularEdad(a.FechaNacimiento)
             };
         }
 
         public async Task<IEnumerable<AlumnoResponse>> ObtenerTodos()
         {
-            return await _context.Alumnos
-                .Include(a => a.Usuario) // Si quieres traer el email del usuario relacionado
-                .Select(a => new AlumnoResponse
-                {
-                    Id = a.Id,
-                    Matricula = a.Matricula,
-                    NombreCompleto = $"{a.Nombre} {a.Apellido}",
-                    Email = a.Usuario != null ? a.Usuario.Email : "Sin correo"
-                }).ToListAsync();
-        }
+            var alumnos = await _context.Alumnos
+                .Include(a => a.Usuario)
+                .ToListAsync(); // Traemos la lista a memoria para poder usar el método CalcularEdad
 
-        
+            return alumnos.Select(a => new AlumnoResponse
+            {
+                Id = a.Id,
+                Matricula = a.Matricula,
+                NombreCompleto = $"{a.Nombre} {a.Apellido}",
+                Email = a.Usuario?.Email ?? "Sin correo",
+                FechaNacimiento = a.FechaNacimiento, // IMPORTANTE: Asignar la fecha
+                Edad = CalcularEdad(a.FechaNacimiento) // Ahora sí tendrá un valor real
+            });
+        }
     }
 }

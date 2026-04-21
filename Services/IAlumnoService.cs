@@ -17,6 +17,7 @@ namespace EscolarApi.Services
         Task<object> ObtenerKardex(int alumnoId);
         Task<bool> CambiarPassword(int alumnoId, string nuevaPassword);
         Task<IEnumerable<AlumnoResponse>> ObtenerAlumnosPorCurso(int cursoId);
+        int CalcularEdad(DateTime fechaNacimiento);
 
     }
 }
