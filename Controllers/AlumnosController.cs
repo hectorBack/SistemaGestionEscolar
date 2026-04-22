@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EscolarApi.DTOs;
+using EscolarApi.DTOs.Response;
 using EscolarApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,10 +22,14 @@ namespace EscolarApi.Controllers
 
         //Metodo para obtener todos los estudiantes
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AlumnoResponse>>> GetAll()
+        public async Task<ActionResult<PagedResponse<AlumnoResponse>>> GetAll(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? nombre = null,
+            [FromQuery] string? matricula = null)
         {
-            var alumnos = await _alumnoService.ObtenerTodos();
-            return Ok(alumnos);
+            var response = await _alumnoService.ObtenerTodos(pageNumber, pageSize, nombre, matricula);
+            return Ok(response);
         }
 
         //Metodo para obtener un Alumno por {id}
@@ -40,16 +45,9 @@ namespace EscolarApi.Controllers
         [HttpPost]
         public async Task<ActionResult<AlumnoResponse>> Create([FromBody] AlumnoRequest request)
         {
-            try
-            {
-                var nuevoAlumno = await _alumnoService.CrearAlumno(request);
-                return CreatedAtAction(nameof(GetById), new { id = nuevoAlumno.Id }, nuevoAlumno);
-            }
-            catch (Exception ex)
-            {
-                // Si el email existe, devolveremos un 400 Bad Request con el mensaje de error
-                return BadRequest(new { message = ex.Message });
-            }
+            // Si el Service lanza una excepción, el Middleware la atrapará automáticamente
+            var nuevoAlumno = await _alumnoService.CrearAlumno(request);
+            return CreatedAtAction(nameof(GetById), new { id = nuevoAlumno.Id }, nuevoAlumno);
         }
 
         [HttpPut("{id}")]
@@ -92,6 +90,13 @@ namespace EscolarApi.Controllers
         {
             var alumnos = await _alumnoService.ObtenerAlumnosPorCurso(cursoId);
             return Ok(alumnos);
+        }
+
+        [HttpGet("estadisticas")]
+        public async Task<ActionResult<EstadisticasAlumnoResponse>> GetEstadisticas()
+        {
+            var stats = await _alumnoService.ObtenerEstadisticas();
+            return Ok(stats);
         }
     }
 }

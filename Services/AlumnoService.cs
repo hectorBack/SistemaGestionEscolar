@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EscolarApi.DTOs;
+using EscolarApi.DTOs.Response;
 using EscolarApi.models;
 using Microsoft.EntityFrameworkCore;
 
@@ -76,6 +77,11 @@ namespace EscolarApi.Services
                 throw new Exception("La matrícula ya pertenece a otro alumno.");
             }
 
+            if (request.FechaNacimiento > DateTime.Now.AddYears(-3))
+            {
+                throw new Exception("La fecha de nacimiento no es válida para un estudiante (mínimo 3 años).");
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
@@ -132,9 +138,11 @@ namespace EscolarApi.Services
             if (alumno == null) return false;
 
             // Buscamos el usuario asociado para borrarlo y que la cascada haga el resto
-            var usuario = await _context.Usuarios.FindAsync(alumno.UsuarioId);
-            if (usuario != null) _context.Usuarios.Remove(usuario);
+            //var usuario = await _context.Usuarios.FindAsync(alumno.UsuarioId);
+            //if (usuario != null) _context.Usuarios.Remove(usuario);
+            alumno.Activo = false;
 
+            _context.Alumnos.Update(alumno);
             return await _context.SaveChangesAsync() > 0;
         }
 
@@ -149,6 +157,28 @@ namespace EscolarApi.Services
             NombreCompleto = $"{i.Alumno.Nombre} {i.Alumno.Apellido}",
             Email = i.Alumno.Usuario.Email
         }).ToListAsync();
+        }
+
+        //Obtener Estadisticas de Alumnos
+        public async Task<EstadisticasAlumnoResponse> ObtenerEstadisticas()
+        {
+            var alumnos = await _context.Alumnos.ToListAsync();
+
+            if (!alumnos.Any())
+            {
+                return new EstadisticasAlumnoResponse();
+            }
+
+            // Calculamos las edades en memoria
+            var edades = alumnos.Select(a => CalcularEdad(a.FechaNacimiento));
+
+            return new EstadisticasAlumnoResponse
+            {
+                TotalAlumnos = alumnos.Count,
+                AlumnosActivos = alumnos.Count(a => a.Activo),
+                AlumnosInactivos = alumnos.Count(a => !a.Activo),
+                PromedioEdad = Math.Round(edades.Average(), 2)
+            };
         }
 
         public async Task<object> ObtenerKardex(int alumnoId)
@@ -182,21 +212,40 @@ namespace EscolarApi.Services
             };
         }
 
-        public async Task<IEnumerable<AlumnoResponse>> ObtenerTodos()
+        public async Task<PagedResponse<AlumnoResponse>> ObtenerTodos(int pageNumber, int pageSize, string? nombre, string? matricula)
         {
-            var alumnos = await _context.Alumnos
+            var query = _context.Alumnos
                 .Include(a => a.Usuario)
-                .ToListAsync(); // Traemos la lista a memoria para poder usar el método CalcularEdad
+                .Where(a => a.Activo)
+                .AsQueryable();
 
-            return alumnos.Select(a => new AlumnoResponse
+            if (!string.IsNullOrEmpty(nombre))
+                query = query.Where(a => (a.Nombre + " " + a.Apellido).Contains(nombre));
+
+            if (!string.IsNullOrEmpty(matricula))
+                query = query.Where(a => a.Matricula.Contains(matricula));
+
+            var totalRecords = await query.CountAsync();
+
+            // 1. Primero obtenemos los datos de la BD sin el cálculo
+            var alumnosBase = await query
+                .OrderBy(a => a.Apellido) // <--- ESTO CORRIGE EL SEGUNDO ERROR (el warning)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(); // Aquí la consulta ya se ejecutó en SQL
+
+            // 2. Ahora que están en memoria, mapeamos y calculamos la edad con C#
+            var data = alumnosBase.Select(a => new AlumnoResponse
             {
                 Id = a.Id,
                 Matricula = a.Matricula,
                 NombreCompleto = $"{a.Nombre} {a.Apellido}",
                 Email = a.Usuario?.Email ?? "Sin correo",
-                FechaNacimiento = a.FechaNacimiento, // IMPORTANTE: Asignar la fecha
-                Edad = CalcularEdad(a.FechaNacimiento) // Ahora sí tendrá un valor real
+                FechaNacimiento = a.FechaNacimiento,
+                Edad = CalcularEdad(a.FechaNacimiento) // Ahora sí funciona porque ya no es SQL
             });
+
+            return new PagedResponse<AlumnoResponse>(data, totalRecords, pageNumber, pageSize);
         }
     }
 }
