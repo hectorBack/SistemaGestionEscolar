@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EscolarApi.DTOs;
 using EscolarApi.DTOs.Response;
+using EscolarApi.Mapper;
 using EscolarApi.models;
 using Microsoft.EntityFrameworkCore;
 
@@ -63,67 +64,42 @@ namespace EscolarApi.Services
 
         public async Task<AlumnoResponse> CrearAlumno(AlumnoRequest request)
         {
-            // 1. Validar si el email ya existe en la tabla de Usuarios
-            var emailExiste = await _context.Usuarios.AnyAsync(u => u.Email == request.Email);
-            if (emailExiste)
-            {
-                // Lanzamos una excepción personalizada o manejamos el error
+            if (await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
                 throw new Exception("El correo electrónico ya se encuentra registrado.");
-            }
 
-            var matriculaExiste = await _context.Alumnos.AnyAsync(a => a.Matricula == request.Matricula);
-            if (matriculaExiste)
-            {
+            if (await _context.Alumnos.AnyAsync(a => a.Matricula == request.Matricula))
                 throw new Exception("La matrícula ya pertenece a otro alumno.");
-            }
-
-            if (request.FechaNacimiento > DateTime.Now.AddYears(-3))
-            {
-                throw new Exception("La fecha de nacimiento no es válida para un estudiante (mínimo 3 años).");
-            }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // HASHEAR la contraseña antes de crear el objeto Usuario
-                // El 'Salt' se genera automáticamente dentro del Hash
-                string passwordHasheada = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-                // 2. Crear la entidad Usuario
                 var nuevoUsuario = new Usuarios
                 {
                     Email = request.Email,
-                    Password = passwordHasheada,
+                    Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     Rol = "Alumno"
                 };
 
                 _context.Usuarios.Add(nuevoUsuario);
                 await _context.SaveChangesAsync();
 
-                // 3. Crear la entidad Alumno vinculada
                 var nuevoAlumno = new Alumnos
                 {
                     Matricula = request.Matricula,
                     Nombre = request.Nombre,
                     Apellido = request.Apellido,
                     FechaNacimiento = request.FechaNacimiento,
-                    UsuarioId = nuevoUsuario.Id
+                    UsuarioId = nuevoUsuario.Id,
+                    Activo = true
                 };
 
                 _context.Alumnos.Add(nuevoAlumno);
                 await _context.SaveChangesAsync();
-
                 await transaction.CommitAsync();
 
-                return new AlumnoResponse
-                {
-                    Id = nuevoAlumno.Id,
-                    Matricula = nuevoAlumno.Matricula,
-                    NombreCompleto = $"{nuevoAlumno.Nombre} {nuevoAlumno.Apellido}",
-                    Email = nuevoUsuario.Email,
-                    Edad = CalcularEdad(nuevoAlumno.FechaNacimiento)
-                };
+                // USANDO EL MAPPER
+                return AlumnoMapper.ToResponse(nuevoAlumno);
             }
             catch (Exception)
             {
@@ -137,40 +113,32 @@ namespace EscolarApi.Services
             var alumno = await _context.Alumnos.FindAsync(id);
             if (alumno == null) return false;
 
-            // Buscamos el usuario asociado para borrarlo y que la cascada haga el resto
-            //var usuario = await _context.Usuarios.FindAsync(alumno.UsuarioId);
-            //if (usuario != null) _context.Usuarios.Remove(usuario);
             alumno.Activo = false;
-
             _context.Alumnos.Update(alumno);
             return await _context.SaveChangesAsync() > 0;
         }
 
         public async Task<IEnumerable<AlumnoResponse>> ObtenerAlumnosPorCurso(int cursoId)
         {
-            return await _context.Inscripciones
-        .Where(i => i.CursoId == cursoId)
-        .Select(i => new AlumnoResponse
-        {
-            Id = i.Alumno.Id,
-            Matricula = i.Alumno.Matricula,
-            NombreCompleto = $"{i.Alumno.Nombre} {i.Alumno.Apellido}",
-            Email = i.Alumno.Usuario.Email
-        }).ToListAsync();
+            var inscritos = await _context.Inscripciones
+                .Include(i => i.Alumno)
+                    .ThenInclude(a => a.Usuario)
+                .Where(i => i.CursoId == cursoId)
+                .ToListAsync();
+
+            // USANDO EL MAPPER
+            return inscritos.Select(i => AlumnoMapper.ToResponse(i.Alumno));
         }
 
         //Obtener Estadisticas de Alumnos
         public async Task<EstadisticasAlumnoResponse> ObtenerEstadisticas()
         {
             var alumnos = await _context.Alumnos.ToListAsync();
+            if (!alumnos.Any()) return new EstadisticasAlumnoResponse();
 
-            if (!alumnos.Any())
-            {
-                return new EstadisticasAlumnoResponse();
-            }
-
-            // Calculamos las edades en memoria
-            var edades = alumnos.Select(a => CalcularEdad(a.FechaNacimiento));
+            // Nota: Aquí se usa el método de cálculo de edad que ahora 
+            // debería ser accesible o estar en una clase de utilidad (Helper)
+            var edades = alumnos.Select(a => CalcularEdadInterno(a.FechaNacimiento));
 
             return new EstadisticasAlumnoResponse
             {
@@ -181,17 +149,26 @@ namespace EscolarApi.Services
             };
         }
 
+        // Método auxiliar para estadísticas
+        private int CalcularEdadInterno(DateTime fecha)
+        {
+            var hoy = DateTime.Today;
+            var edad = hoy.Year - fecha.Year;
+            if (fecha.Date > hoy.AddYears(-edad)) edad--;
+            return edad;
+        }
+
         public async Task<object> ObtenerKardex(int alumnoId)
         {
             return await _context.Inscripciones
-         .Where(i => i.AlumnoId == alumnoId)
-         .Select(i => new
-         {
-             Materia = i.Curso.Materia.Nombre,
-             Ciclo = i.Curso.CicloEscolar,
-             Calificacion = i.CalificacionFinal ?? 0,
-             Profesor = i.Curso.Docente.Nombre
-         }).ToListAsync();
+                 .Where(i => i.AlumnoId == alumnoId)
+                 .Select(i => new
+                 {
+                     Materia = i.Curso.Materia.Nombre,
+                     Ciclo = i.Curso.CicloEscolar,
+                     Calificacion = i.CalificacionFinal ?? 0,
+                     Profesor = i.Curso.Docente.Nombre
+                 }).ToListAsync();
         }
 
         public async Task<AlumnoResponse?> ObtenerPorId(int id)
@@ -202,14 +179,8 @@ namespace EscolarApi.Services
 
             if (a == null) return null;
 
-            return new AlumnoResponse
-            {
-                Id = a.Id,
-                Matricula = a.Matricula,
-                NombreCompleto = $"{a.Nombre} {a.Apellido}",
-                Email = a.Usuario?.Email ?? "Sin correo",
-                Edad = CalcularEdad(a.FechaNacimiento)
-            };
+            // USANDO EL MAPPER
+            return AlumnoMapper.ToResponse(a);
         }
 
         public async Task<PagedResponse<AlumnoResponse>> ObtenerTodos(int pageNumber, int pageSize, string? nombre, string? matricula)
@@ -227,23 +198,14 @@ namespace EscolarApi.Services
 
             var totalRecords = await query.CountAsync();
 
-            // 1. Primero obtenemos los datos de la BD sin el cálculo
             var alumnosBase = await query
-                .OrderBy(a => a.Apellido) // <--- ESTO CORRIGE EL SEGUNDO ERROR (el warning)
+                .OrderBy(a => a.Apellido)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync(); // Aquí la consulta ya se ejecutó en SQL
+                .ToListAsync();
 
-            // 2. Ahora que están en memoria, mapeamos y calculamos la edad con C#
-            var data = alumnosBase.Select(a => new AlumnoResponse
-            {
-                Id = a.Id,
-                Matricula = a.Matricula,
-                NombreCompleto = $"{a.Nombre} {a.Apellido}",
-                Email = a.Usuario?.Email ?? "Sin correo",
-                FechaNacimiento = a.FechaNacimiento,
-                Edad = CalcularEdad(a.FechaNacimiento) // Ahora sí funciona porque ya no es SQL
-            });
+            // USANDO EL MAPPER con Select
+            var data = alumnosBase.Select(a => AlumnoMapper.ToResponse(a));
 
             return new PagedResponse<AlumnoResponse>(data, totalRecords, pageNumber, pageSize);
         }

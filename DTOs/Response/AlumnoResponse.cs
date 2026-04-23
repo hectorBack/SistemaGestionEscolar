@@ -12,6 +12,7 @@ namespace EscolarApi.DTOs
         public string NombreCompleto { get; set; } = null!;
         public string Email { get; set; } = null!;
         public DateTime FechaNacimiento { get; set; }
+        public bool Activo { get; set; }
         public int Edad { get; set; }
     }
 }
