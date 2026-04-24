@@ -17,6 +17,7 @@ namespace EscolarApi.Mapper
                 Matricula = alumno.Matricula,
                 NombreCompleto = $"{alumno.Nombre} {alumno.Apellido}",
                 Email = alumno.Usuario?.Email ?? "Sin correo",
+                Genero = alumno.Genero ?? "No especificado",
                 FechaNacimiento = alumno.FechaNacimiento,
                 Activo = alumno.Activo,
                 Edad = CalcularEdad(alumno.FechaNacimiento)

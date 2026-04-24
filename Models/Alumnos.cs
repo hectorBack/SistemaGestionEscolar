@@ -14,7 +14,9 @@ public partial class Alumnos
     public string Apellido { get; set; } = null!;
 
     public DateTime FechaNacimiento { get; set; }
-    
+
+    public string? Genero { get; set; }
+
     public bool Activo { get; set; }
 
     public int? UsuarioId { get; set; }

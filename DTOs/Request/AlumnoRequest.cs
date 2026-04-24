@@ -22,6 +22,10 @@ namespace EscolarApi.DTOs
         [StringLength(50, ErrorMessage = "El apellido no puede exceder los 50 caracteres.")]
         public string Apellido { get; set; } = null!;
 
+        [Required(ErrorMessage = "El género es obligatorio.")]
+        [RegularExpression("^(Masculino|Femenino|Otro)$", ErrorMessage = "El género debe ser 'Masculino', 'Femenino' u 'Otro'.")]
+        public string Genero { get; set; } = null!;
+
         [Required(ErrorMessage = "La fecha de nacimiento es obligatoria.")]
         [MinMaxAge(3, 120, ErrorMessage = "La edad debe estar entre 3 y 120 años.")]
         public DateTime FechaNacimiento { get; set; }

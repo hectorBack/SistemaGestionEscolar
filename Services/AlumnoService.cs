@@ -26,6 +26,7 @@ namespace EscolarApi.Services
 
             alumno.Nombre = request.Nombre;
             alumno.Apellido = request.Apellido;
+            alumno.Genero = request.Genero;
             alumno.FechaNacimiento = request.FechaNacimiento;
             alumno.Matricula = request.Matricula;
 
@@ -89,6 +90,7 @@ namespace EscolarApi.Services
                     Matricula = request.Matricula,
                     Nombre = request.Nombre,
                     Apellido = request.Apellido,
+                    Genero = request.Genero,
                     FechaNacimiento = request.FechaNacimiento,
                     UsuarioId = nuevoUsuario.Id,
                     Activo = true
