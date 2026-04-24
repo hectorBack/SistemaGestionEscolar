@@ -15,6 +15,14 @@ public partial class Cursos
 
     public string? Horario { get; set; }
 
+    public string? Aula { get; set; }
+
+    public int CupoMaximo { get; set; }
+
+    public int CupoDisponible { get; set; }
+
+    public bool Activo { get; set; }
+
     public virtual Docentes Docente { get; set; } = null!;
 
     public virtual ICollection<Inscripciones> Inscripciones { get; set; } = new List<Inscripciones>();

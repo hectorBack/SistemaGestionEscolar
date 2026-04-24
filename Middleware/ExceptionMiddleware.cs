@@ -33,31 +33,35 @@ namespace EscolarApi.Middleware
             }
         }
 
-        private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             context.Response.ContentType = "application/json";
 
-            // Por defecto es 500, pero podemos personalizarlo
-            var statusCode = (int)HttpStatusCode.InternalServerError;
-            var message = "Ocurrió un error inesperado en el servidor.";
+            // Por defecto es 500
+            int statusCode = StatusCodes.Status500InternalServerError;
+            string message = "Ocurrió un error inesperado en el servidor.";
 
-            // Aquí capturamos tus excepciones personalizadas del Service
-            if (exception is Exception && (exception.Message.Contains("registrado") || exception.Message.Contains("pertenece")))
+            // Lógica para detectar errores de validación de negocio
+            // Si la excepción no tiene "InnerException" y nosotros escribimos el mensaje,
+            // es muy probable que sea una validación de nuestro Service.
+            if (exception is Exception && !string.IsNullOrEmpty(exception.Message)
+                && exception.StackTrace != null && exception.StackTrace.Contains("Services"))
             {
-                statusCode = (int)HttpStatusCode.BadRequest; // 400
+                // Si el error viene de la capa de servicios, lo tratamos como un error del cliente (400)
+                statusCode = StatusCodes.Status400BadRequest;
                 message = exception.Message;
             }
 
-            var response = new ErrorResponse
+            context.Response.StatusCode = statusCode;
+
+            var response = new
             {
                 StatusCode = statusCode,
                 Message = message,
-                // Solo mostrar detalles técnicos en desarrollo, no en producción
-                Details = _env.IsDevelopment() ? exception.StackTrace : null
+                Details = exception.StackTrace // Esto podrías ocultarlo en producción
             };
 
-            context.Response.StatusCode = statusCode;
-            await context.Response.WriteAsync(response.ToString());
+            return context.Response.WriteAsJsonAsync(response);
         }
     }
 }
