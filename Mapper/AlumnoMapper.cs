@@ -19,8 +19,6 @@ namespace EscolarApi.Mapper
                 Email = alumno.Usuario?.Email ?? "Sin correo",
                 FechaNacimiento = alumno.FechaNacimiento,
                 Activo = alumno.Activo,
-                // Nota: El cálculo de edad lo puedes seguir haciendo aquí 
-                // llamando a tu método de utilidad
                 Edad = CalcularEdad(alumno.FechaNacimiento)
             };
         }

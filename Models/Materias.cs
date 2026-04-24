@@ -7,9 +7,13 @@ public partial class Materias
 {
     public int Id { get; set; }
 
+    public string Codigo { get; set; } = null!;
+
     public string Nombre { get; set; } = null!;
 
     public int Creditos { get; set; }
+
+    public bool Activo { get; set; }
 
     public string? Descripcion { get; set; }
 
