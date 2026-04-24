@@ -11,9 +11,13 @@ public partial class Inscripciones
 
     public int CursoId { get; set; }
 
-    public DateTime? FechaInscripcion { get; set; }
+    public DateTime FechaInscripcion { get; set; }
 
     public decimal? CalificacionFinal { get; set; }
+
+    public string Estatus { get; set; } = "Activo";
+
+    public bool Activo { get; set; }
 
     public virtual Alumnos Alumno { get; set; } = null!;
 
