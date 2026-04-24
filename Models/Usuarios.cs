@@ -15,6 +15,10 @@ public partial class Usuarios
 
     public DateTime? FechaRegistro { get; set; }
 
+    public bool Activo { get; set; }
+
+    public DateTime? UltimoAcceso { get; set; }
+
     public virtual Alumnos? Alumnos { get; set; }
 
     public virtual Docentes? Docentes { get; set; }
