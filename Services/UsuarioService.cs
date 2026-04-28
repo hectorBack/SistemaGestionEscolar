@@ -69,6 +69,13 @@ namespace EscolarApi.Services.Impl
             return UsuarioMapper.ToResponse(usuario, tokenCreado);
         }
 
+        public async Task<UsuarioResponse?> ObtenerPerfil(int id)
+        {
+            var usuario = await _context.Usuarios.FindAsync(id);
+            if (usuario == null) return null;
+
+            return UsuarioMapper.ToResponse(usuario);
+        }
         public async Task<UsuarioResponse?> ObtenerPorId(int id)
         {
             var u = await _context.Usuarios.FindAsync(id);

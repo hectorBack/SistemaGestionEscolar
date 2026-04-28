@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using EscolarApi.DTOs.Request;
 using EscolarApi.DTOs.Response;
@@ -10,7 +11,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EscolarApi.Controllers
 {
-    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class UsuariosController : ControllerBase
@@ -35,6 +35,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<PagedResponse<UsuarioResponse>>> GetAll(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10,
@@ -47,6 +48,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UsuarioResponse>> GetById(int id)
         {
             var usuario = await _usuarioService.ObtenerPorId(id);
@@ -56,6 +58,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPatch("{id}/estado")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateStatus(int id, [FromQuery] bool activo)
         {
             var result = await _usuarioService.CambiarEstado(id, activo);
@@ -77,6 +80,26 @@ namespace EscolarApi.Controllers
             {
                 return BadRequest(new { Message = ex.Message });
             }
+        }
+
+        [HttpGet("perfil")]
+        [Authorize] // Cualquier usuario con token válido puede ver SU perfil
+        public async Task<ActionResult<UsuarioResponse>> GetPerfil()
+        {
+            // Extraemos el ID del token
+            var identity = User.Identity as ClaimsIdentity;
+            if (identity == null) return Unauthorized();
+
+            var userIdClaim = identity.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null) return Unauthorized();
+
+            int userId = int.Parse(userIdClaim.Value);
+
+            var perfil = await _usuarioService.ObtenerPerfil(userId);
+
+            if (perfil == null) return NotFound(new { Message = "Usuario no encontrado." });
+
+            return Ok(perfil);
         }
     }
 }
