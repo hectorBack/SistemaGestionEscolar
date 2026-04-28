@@ -18,5 +18,6 @@ namespace EscolarApi.Services
         Task<UsuarioResponse?> ObtenerPorId(int id);
         Task<bool> CambiarEstado(int id, bool activo); // Activar/Desactivar
         Task<bool> ActualizarEmail(int id, string nuevoEmail);
+        Task<UsuarioResponse> RegistrarAdmin(AdminRegistroRequest request);
     }
 }

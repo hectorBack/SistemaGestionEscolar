@@ -1,3 +1,11 @@
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.csproj.AssemblyReference.cache
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.GeneratedMSBuildEditorConfig.editorconfig
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.AssemblyInfoInputs.cache
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.AssemblyInfo.cs
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.csproj.CoreCompileInputs.cache
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.MvcApplicationPartsAssemblyInfo.cs
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.MvcApplicationPartsAssemblyInfo.cache
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.sourcelink.json
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\appsettings.Development.json
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\appsettings.json
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\EscolarApi.staticwebassets.endpoints.json
@@ -8,7 +16,9 @@ C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Esco
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\EscolarApi.pdb
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Azure.Core.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Azure.Identity.dll
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\BCrypt.Net-Next.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Humanizer.dll
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.AspNetCore.OpenApi.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.Bcl.AsyncInterfaces.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.Data.SqlClient.dll
@@ -17,6 +27,7 @@ C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Micr
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.Design.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.Relational.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.SqlServer.dll
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.Extensions.DependencyModel.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.Identity.Client.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.Identity.Client.Extensions.Msal.dll
@@ -30,6 +41,7 @@ C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Micr
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.SqlServer.Server.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.Win32.SystemEvents.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Mono.TextTemplating.dll
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Scrutor.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Swashbuckle.AspNetCore.Swagger.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Swashbuckle.AspNetCore.SwaggerUI.dll
@@ -41,6 +53,8 @@ C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Syst
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\System.Runtime.Caching.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\System.Security.Cryptography.ProtectedData.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\System.Security.Permissions.dll
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\System.Text.Encodings.Web.dll
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\System.Text.Json.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\System.Windows.Extensions.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\runtimes\unix\lib\net6.0\Microsoft.Data.SqlClient.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\runtimes\win\lib\net6.0\Microsoft.Data.SqlClient.dll
@@ -53,14 +67,8 @@ C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\runt
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\runtimes\win\lib\net6.0\System.Drawing.Common.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
+C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\runtimes\browser\lib\net7.0\System.Text.Encodings.Web.dll
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.csproj.AssemblyReference.cache
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.GeneratedMSBuildEditorConfig.editorconfig
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.AssemblyInfoInputs.cache
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.AssemblyInfo.cs
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.csproj.CoreCompileInputs.cache
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.MvcApplicationPartsAssemblyInfo.cs
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.MvcApplicationPartsAssemblyInfo.cache
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\scopedcss\bundle\EscolarApi.styles.css
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\staticwebassets.build.json
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\staticwebassets.development.json
@@ -77,10 +85,3 @@ C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\refi
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.pdb
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.genruntimeconfig.cache
 C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\ref\EscolarApi.dll
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\Scrutor.dll
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\System.IO.Pipelines.dll
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\System.Text.Encodings.Web.dll
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\System.Text.Json.dll
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\obj\Debug\net7.0\EscolarApi.sourcelink.json
-C:\APLICACIONES WEBS\Sistema de gestion escolar\EscolarApi\bin\Debug\net7.0\BCrypt.Net-Next.dll

@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using EscolarApi.DTOs;
 using EscolarApi.DTOs.Response;
 using EscolarApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EscolarApi.Controllers
 {
+    [Authorize(Roles = "Admin,Docente")]
     [ApiController]
     [Route("api/[controller]")]
     public class AlumnosController : ControllerBase

@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using EscolarApi.DTOs.Request;
 using EscolarApi.DTOs.Response;
 using EscolarApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EscolarApi.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class UsuariosController : ControllerBase
@@ -20,6 +22,7 @@ namespace EscolarApi.Controllers
             _usuarioService = usuarioService;
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<ActionResult<UsuarioResponse>> Login([FromBody] LoginRequest request)
         {
@@ -59,6 +62,21 @@ namespace EscolarApi.Controllers
             if (!result) return NotFound(new { Message = "No se pudo actualizar el estado." });
 
             return Ok(new { Message = $"Usuario {(activo ? "activado" : "desactivado")} correctamente." });
+        }
+
+        [HttpPost("registro-admin")]
+        [Authorize(Roles = "Admin")] // Solo un Admin crea otros Admins
+        public async Task<ActionResult<UsuarioResponse>> RegistrarAdmin([FromBody] AdminRegistroRequest request)
+        {
+            try
+            {
+                var response = await _usuarioService.RegistrarAdmin(request);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
     }
 }
