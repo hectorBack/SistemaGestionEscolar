@@ -116,6 +116,11 @@ public partial class GestionEscolarDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Nombre).HasMaxLength(100);
+
+            entity.HasOne(d => d.MateriaPrerrequisito)
+            .WithMany() // Una materia puede ser prerrequisito de muchas otras
+            .HasForeignKey(d => d.MateriaPrerrequisitoId)
+            .OnDelete(DeleteBehavior.Restrict); // Evita que al borrar una materia se borren las dependientes
         });
 
         modelBuilder.Entity<Usuarios>(entity =>

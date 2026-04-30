@@ -62,8 +62,8 @@ namespace EscolarApi.Controllers
         [HttpPatch("{id}/calificar")]
         public async Task<IActionResult> Calificar(int id, [FromQuery] decimal calificacion)
         {
-            if (calificacion < 0 || calificacion > 10)
-                return BadRequest(new { Message = "La calificación debe estar entre 0 y 10." });
+            if (calificacion < 0 || calificacion > 100)
+                return BadRequest(new { Message = "La calificación debe estar entre 0 y 100." });
 
             var resultado = await _inscripcionService.AsignarCalificacion(id, calificacion);
             if (!resultado) return NotFound(new { Message = "No se pudo asignar la calificación." });

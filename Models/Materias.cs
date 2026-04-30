@@ -17,5 +17,10 @@ public partial class Materias
 
     public string? Descripcion { get; set; }
 
+    public int? MateriaPrerrequisitoId { get; set; }
+
+    // Propiedad de navegación para el prerrequisito
+    public virtual Materias? MateriaPrerrequisito { get; set; }
+
     public virtual ICollection<Cursos> Cursos { get; set; } = new List<Cursos>();
 }

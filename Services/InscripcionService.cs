@@ -22,14 +22,31 @@ namespace EscolarApi.Services
 
         public async Task<bool> AsignarCalificacion(int id, decimal calificacion)
         {
-            var inscripcion = await _context.Inscripciones.FindAsync(id);
-            if (inscripcion == null) return false;
+            // 1. Buscamos la inscripción por el ID que recibe el método
+            var inscripcion = await _context.Inscripciones
+                .Include(i => i.Curso) // Opcional: por si quieres validar algo del curso
+                .FirstOrDefaultAsync(i => i.Id == id && i.Activo);
 
+            // 2. Validaciones de seguridad
+            if (inscripcion == null)
+                throw new Exception("No se encontró la inscripción o no está activa.");
+
+            if (inscripcion.Estatus == "Finalizado")
+                throw new Exception("Esta materia ya tiene una calificación asentada y está finalizada.");
+
+            // 3. Validar el rango (asumiendo escala 0-100)
+            if (calificacion < 0 || calificacion > 100)
+                throw new Exception("La calificación debe estar en un rango de 0 a 100.");
+
+            // 4. Actualizar los campos
             inscripcion.CalificacionFinal = calificacion;
-            // Si tiene calificación, podríamos marcar el estatus como "Finalizado"
+
+            // Cambiamos el estatus a Finalizado para que cuente como materia cursada
             inscripcion.Estatus = "Finalizado";
 
             _context.Inscripciones.Update(inscripcion);
+
+            // 5. Guardar cambios y retornar éxito
             return await _context.SaveChangesAsync() > 0;
         }
 
@@ -76,7 +93,7 @@ namespace EscolarApi.Services
                 if (alumno == null || !alumno.Activo)
                     throw new Exception("El alumno no existe o está inactivo.");
 
-                // 2. Validar Curso y Cupo
+                // 2. Validar Curso y Cupo (Cargamos la Materia para ver el Prerrequisito)
                 var cursoNuevo = await _context.Cursos
                     .Include(c => c.Materia)
                     .FirstOrDefaultAsync(c => c.Id == request.CursoId && c.Activo);
@@ -92,8 +109,27 @@ namespace EscolarApi.Services
 
                 if (yaInscrito) throw new Exception("El alumno ya está inscrito en este curso.");
 
-                // --- NUEVA VALIDACIÓN: CHOQUE DE HORARIO PARA EL ALUMNO ---
-                // Buscamos si el alumno ya tiene clases en ese mismo ciclo, día y horas
+                // --- NUEVA VALIDACIÓN: PRERREQUISITO ---
+                if (cursoNuevo.Materia.MateriaPrerrequisitoId.HasValue)
+                {
+                    var preReqId = cursoNuevo.Materia.MateriaPrerrequisitoId.Value;
+
+                    // Buscamos si tiene la materia aprobada (Estatus Finalizado y Calificación >= 70)
+                    // Ajusta el >= 70 según tu escala de calificación
+                    var aprobado = await _context.Inscripciones
+                        .AnyAsync(i => i.AlumnoId == request.AlumnoId &&
+                                       i.Curso.MateriaId == preReqId &&
+                                       i.CalificacionFinal >= 70);
+
+                    if (!aprobado)
+                    {
+                        var materiaPre = await _context.Materias.FindAsync(preReqId);
+                        throw new Exception($"No se puede realizar la inscripción. Requiere haber aprobado la materia: {materiaPre?.Nombre}.");
+                    }
+                }
+                // ---------------------------------------
+
+                // --- VALIDACIÓN: CHOQUE DE HORARIO PARA EL ALUMNO ---
                 var choqueAlumno = await _context.Inscripciones
                     .Where(i => i.AlumnoId == request.AlumnoId &&
                                 i.Estatus == "Activo" &&
@@ -104,7 +140,6 @@ namespace EscolarApi.Services
 
                 if (choqueAlumno)
                     throw new Exception($"El alumno tiene un conflicto de horario el día {cursoNuevo.DiaSemana} con otra materia ya inscrita.");
-                // ---------------------------------------------------------
 
                 // 4. Crear la inscripción
                 var nuevaInscripcion = new Inscripciones
@@ -125,8 +160,11 @@ namespace EscolarApi.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                // Cargar referencias para el Mapper (Incluyendo Docente para que no salga vacío)
                 await _context.Entry(nuevaInscripcion).Reference(i => i.Alumno).LoadAsync();
-                // El curso ya está cargado con sus relaciones por el FirstOrDefault de arriba
+                await _context.Entry(nuevaInscripcion).Reference(i => i.Curso).LoadAsync();
+                await _context.Entry(nuevaInscripcion.Curso).Reference(c => c.Materia).LoadAsync();
+                await _context.Entry(nuevaInscripcion.Curso).Reference(c => c.Docente).LoadAsync();
 
                 return InscripcionMapper.ToResponse(nuevaInscripcion);
             }
