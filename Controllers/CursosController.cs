@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EscolarApi.Controllers
 {
-    [Authorize(Roles = "Admin,Docente,Alumno")]
     [ApiController]
     [Route("api/[controller]")]
     public class CursosController : ControllerBase
@@ -23,6 +22,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Docente,Alumno")]
         public async Task<ActionResult<PagedResponse<CursoResponse>>> GetAll(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10,
@@ -34,6 +34,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Docente,Alumno")]
         public async Task<ActionResult<CursoResponse>> GetById(int id)
         {
             var curso = await _cursoService.ObtenerPorId(id);
@@ -43,8 +44,12 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CursoResponse>> Create([FromBody] CursoRequest request)
         {
+            // Validación manual preventiva si no usas FluentValidation
+            if (request.HoraInicio >= request.HoraFin)
+                return BadRequest(new { Message = "La hora de inicio debe ser anterior a la hora de fin." });
             // Gracias a nuestro Middleware Global, si el Service lanza una Exception 
             // por choque de horarios, el cliente recibirá un error 400/500 automáticamente.
             var nuevoCurso = await _cursoService.CrearCurso(request);
@@ -52,6 +57,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] CursoRequest request)
         {
             var actualizado = await _cursoService.Actualizar(id, request);
@@ -61,6 +67,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var eliminado = await _cursoService.Eliminar(id);

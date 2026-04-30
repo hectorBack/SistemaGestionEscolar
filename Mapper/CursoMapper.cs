@@ -22,6 +22,12 @@ namespace EscolarApi.Mapper
                     ? $"{curso.Docente.Nombre} {curso.Docente.Apellido}"
                     : "Docente no cargado",
                 CicloEscolar = curso.CicloEscolar,
+
+                // Nuevos campos en la respuesta
+                DiaSemana = curso.DiaSemana,
+                HoraInicio = curso.HoraInicio,
+                HoraFin = curso.HoraFin,
+
                 Horario = curso.Horario ?? "Sin horario",
                 Aula = curso.Aula,
                 CupoMaximo = curso.CupoMaximo,

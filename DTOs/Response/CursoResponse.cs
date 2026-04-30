@@ -13,6 +13,11 @@ namespace EscolarApi.DTOs.Response
         public int DocenteId { get; set; }
         public string DocenteNombre { get; set; } = null!;
         public string CicloEscolar { get; set; } = null!;
+
+        public string DiaSemana { get; set; } = null!;
+        public TimeSpan HoraInicio { get; set; }
+        public TimeSpan HoraFin { get; set; }
+
         public string Horario { get; set; } = null!;
         public string? Aula { get; set; }
         public int CupoMaximo { get; set; }

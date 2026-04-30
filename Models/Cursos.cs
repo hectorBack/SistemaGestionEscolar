@@ -13,6 +13,10 @@ public partial class Cursos
 
     public string CicloEscolar { get; set; } = null!;
 
+    public string DiaSemana { get; set; } = null!;
+    public TimeSpan HoraInicio { get; set; }
+    public TimeSpan HoraFin { get; set; }
+
     public string? Horario { get; set; }
 
     public string? Aula { get; set; }

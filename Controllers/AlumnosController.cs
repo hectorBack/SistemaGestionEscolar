@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EscolarApi.DTOs;
+using EscolarApi.DTOs.Request;
 using EscolarApi.DTOs.Response;
 using EscolarApi.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +11,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EscolarApi.Controllers
 {
-    [Authorize(Roles = "Admin,Docente")]
     [ApiController]
     [Route("api/[controller]")]
     public class AlumnosController : ControllerBase
@@ -24,6 +24,7 @@ namespace EscolarApi.Controllers
 
         //Metodo para obtener todos los estudiantes
         [HttpGet]
+        [Authorize(Roles = "Admin,Docente")]
         public async Task<ActionResult<PagedResponse<AlumnoResponse>>> GetAll(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10,
@@ -36,15 +37,19 @@ namespace EscolarApi.Controllers
 
         //Metodo para obtener un Alumno por {id}
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Docente")]
         public async Task<ActionResult<AlumnoResponse>> GetById(int id)
         {
             var alumno = await _alumnoService.ObtenerPorId(id);
-            if (alumno == null) return NotFound($"No se encontró el alumno con ID {id}");
+            if (alumno == null)
+                return NotFound(new { Message = $"No se encontró el alumno con ID {id} o está inactivo." });
+
             return Ok(alumno);
         }
 
         // 3. Crear un nuevo alumno (y su usuario)
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<AlumnoResponse>> Create([FromBody] AlumnoRequest request)
         {
             // Si el Service lanza una excepción, el Middleware la atrapará automáticamente
@@ -53,17 +58,29 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] AlumnoRequest request)
         {
+
             var actualizado = await _alumnoService.ActualizarAlumno(id, request);
-            if (!actualizado) return NotFound();
-            return NoContent(); // 204: La operación fue exitosa pero no devuelve contenido
+            if (!actualizado) return NotFound(new { message = "Alumno no encontrado." });
+
+            return NoContent();
         }
 
         // 5. Eliminar un alumno (y su usuario por cascada)
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
+            // 1. Obtener el ID del Admin que está operando
+            var adminIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+
+            if (adminIdClaim != null && int.Parse(adminIdClaim.Value) == id)
+            {
+                return BadRequest(new { message = "No puedes eliminar tu propia cuenta de administrador." });
+            }
+
             var eliminado = await _alumnoService.EliminarAlumno(id);
             if (!eliminado) return NotFound();
             return NoContent();
@@ -71,15 +88,21 @@ namespace EscolarApi.Controllers
 
         // 6. Cambiar la contraseña del alumno
         [HttpPatch("{id}/cambiar-password")]
-        public async Task<IActionResult> ChangePassword(int id, [FromBody] string nuevaPassword)
+        [Authorize(Roles = "Admin")] // Normalmente solo el Admin o el usuario mismo
+        public async Task<IActionResult> ChangePassword(int id, [FromBody] PasswordChangeRequest request)
         {
-            var resultado = await _alumnoService.CambiarPassword(id, nuevaPassword);
+            if (string.IsNullOrWhiteSpace(request.NuevaPassword))
+                return BadRequest("La contraseña no puede estar vacía.");
+
+            var resultado = await _alumnoService.CambiarPassword(id, request.NuevaPassword);
             if (!resultado) return BadRequest("No se pudo actualizar la contraseña.");
+
             return Ok(new { message = "Contraseña actualizada correctamente" });
         }
 
         // 7. Ver el Kardex de un alumno
         [HttpGet("{id}/kardex")]
+        [Authorize(Roles = "Admin,Docente")]
         public async Task<IActionResult> GetKardex(int id)
         {
             var kardex = await _alumnoService.ObtenerKardex(id);

@@ -12,6 +12,9 @@ namespace EscolarApi.DTOs.Response
         public string AlumnoNombre { get; set; } = null!;
         public int CursoId { get; set; }
         public string CursoNombre { get; set; } = null!; // Materia + Docente
+        public string? DiaSemana { get; set; }
+        public string? HorarioCompleto { get; set; } // Ejemplo: "Lunes 08:00 - 10:00"
+        public string? Aula { get; set; }
         public DateTime FechaInscripcion { get; set; }
         public string Estatus { get; set; } = null!;
         public decimal? CalificacionFinal { get; set; }

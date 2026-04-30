@@ -39,7 +39,7 @@ namespace EscolarApi.Services
             try
             {
                 var inscripcion = await _context.Inscripciones.FindAsync(id);
-                if (inscripcion == null || inscripcion.Estatus == "Baja") return false;
+                if (inscripcion.Estatus == "Baja") throw new Exception("La inscripción ya está dada de baja.");
 
                 // Cambiar estatus
                 inscripcion.Estatus = "Baja";
@@ -67,30 +67,44 @@ namespace EscolarApi.Services
 
         public async Task<InscripcionResponse> Inscribir(InscripcionRequest request)
         {
-            // Iniciamos una transacción para asegurar la integridad
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // 1. Validar si el alumno existe y está activo
+                // 1. Validar Alumno
                 var alumno = await _context.Alumnos.FindAsync(request.AlumnoId);
                 if (alumno == null || !alumno.Activo)
                     throw new Exception("El alumno no existe o está inactivo.");
 
-                // 2. Validar si el curso existe, está activo y TIENE CUPO
-                var curso = await _context.Cursos
+                // 2. Validar Curso y Cupo
+                var cursoNuevo = await _context.Cursos
                     .Include(c => c.Materia)
-                    .Include(c => c.Docente)
                     .FirstOrDefaultAsync(c => c.Id == request.CursoId && c.Activo);
 
-                if (curso == null) throw new Exception("El curso no existe.");
-                if (curso.CupoDisponible <= 0) throw new Exception("Ya no hay cupos disponibles para este curso.");
+                if (cursoNuevo == null) throw new Exception("El curso no existe.");
+                if (cursoNuevo.CupoDisponible <= 0) throw new Exception("Ya no hay cupos disponibles.");
 
-                // 3. Validar que el alumno no esté ya inscrito en este mismo curso
+                // 3. Validar si ya está en ESTE curso
                 var yaInscrito = await _context.Inscripciones
-                    .AnyAsync(i => i.AlumnoId == request.AlumnoId && i.CursoId == request.CursoId && i.Activo && i.Estatus == "Activo");
+                    .AnyAsync(i => i.AlumnoId == request.AlumnoId &&
+                                   i.CursoId == request.CursoId &&
+                                   i.Estatus == "Activo");
 
-                if (yaInscrito) throw new Exception("El alumno ya se encuentra inscrito en este curso.");
+                if (yaInscrito) throw new Exception("El alumno ya está inscrito en este curso.");
+
+                // --- NUEVA VALIDACIÓN: CHOQUE DE HORARIO PARA EL ALUMNO ---
+                // Buscamos si el alumno ya tiene clases en ese mismo ciclo, día y horas
+                var choqueAlumno = await _context.Inscripciones
+                    .Where(i => i.AlumnoId == request.AlumnoId &&
+                                i.Estatus == "Activo" &&
+                                i.Curso.CicloEscolar == cursoNuevo.CicloEscolar)
+                    .AnyAsync(i => i.Curso.DiaSemana == cursoNuevo.DiaSemana &&
+                                   cursoNuevo.HoraInicio < i.Curso.HoraFin &&
+                                   cursoNuevo.HoraFin > i.Curso.HoraInicio);
+
+                if (choqueAlumno)
+                    throw new Exception($"El alumno tiene un conflicto de horario el día {cursoNuevo.DiaSemana} con otra materia ya inscrita.");
+                // ---------------------------------------------------------
 
                 // 4. Crear la inscripción
                 var nuevaInscripcion = new Inscripciones
@@ -102,19 +116,17 @@ namespace EscolarApi.Services
                     Activo = true
                 };
 
-                // 5. RESTAR CUPO AL CURSO
-                curso.CupoDisponible -= 1;
+                // 5. Restar cupo
+                cursoNuevo.CupoDisponible -= 1;
 
                 _context.Inscripciones.Add(nuevaInscripcion);
-                _context.Cursos.Update(curso);
+                _context.Cursos.Update(cursoNuevo);
 
                 await _context.SaveChangesAsync();
-
-                // Confirmamos la operación
                 await transaction.CommitAsync();
 
-                // Cargamos el alumno para el Mapper (el curso ya lo tenemos por el Include de arriba)
                 await _context.Entry(nuevaInscripcion).Reference(i => i.Alumno).LoadAsync();
+                // El curso ya está cargado con sus relaciones por el FirstOrDefault de arriba
 
                 return InscripcionMapper.ToResponse(nuevaInscripcion);
             }

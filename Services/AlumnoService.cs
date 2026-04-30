@@ -112,10 +112,22 @@ namespace EscolarApi.Services
 
         public async Task<bool> EliminarAlumno(int id)
         {
-            var alumno = await _context.Alumnos.FindAsync(id);
+            // Usamos Include para traer al usuario relacionado de una vez
+            var alumno = await _context.Alumnos
+                .Include(a => a.Usuario)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
             if (alumno == null) return false;
 
+            // 1. Desactivar al Alumno
             alumno.Activo = false;
+
+            // 2. Desactivar su cuenta de acceso (Importante)
+            if (alumno.Usuario != null)
+            {
+                alumno.Usuario.Activo = false;
+            }
+
             _context.Alumnos.Update(alumno);
             return await _context.SaveChangesAsync() > 0;
         }
@@ -177,26 +189,33 @@ namespace EscolarApi.Services
         {
             var a = await _context.Alumnos
                 .Include(a => a.Usuario)
-                .FirstOrDefaultAsync(x => x.Id == id);
+                // Agregamos el filtro de Activo para ser consistentes
+                .FirstOrDefaultAsync(x => x.Id == id && x.Activo);
 
             if (a == null) return null;
 
-            // USANDO EL MAPPER
             return AlumnoMapper.ToResponse(a);
         }
 
         public async Task<PagedResponse<AlumnoResponse>> ObtenerTodos(int pageNumber, int pageSize, string? nombre, string? matricula)
         {
+            // 1. Usamos AsNoTracking para velocidad
             var query = _context.Alumnos
                 .Include(a => a.Usuario)
                 .Where(a => a.Activo)
+                .AsNoTracking()
                 .AsQueryable();
 
+            // 2. Búsqueda optimizada (sin concatenar en el servidor)
             if (!string.IsNullOrEmpty(nombre))
-                query = query.Where(a => (a.Nombre + " " + a.Apellido).Contains(nombre));
+            {
+                query = query.Where(a => a.Nombre.Contains(nombre) || a.Apellido.Contains(nombre));
+            }
 
             if (!string.IsNullOrEmpty(matricula))
+            {
                 query = query.Where(a => a.Matricula.Contains(matricula));
+            }
 
             var totalRecords = await query.CountAsync();
 
@@ -206,7 +225,6 @@ namespace EscolarApi.Services
                 .Take(pageSize)
                 .ToListAsync();
 
-            // USANDO EL MAPPER con Select
             var data = alumnosBase.Select(a => AlumnoMapper.ToResponse(a));
 
             return new PagedResponse<AlumnoResponse>(data, totalRecords, pageNumber, pageSize);

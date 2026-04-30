@@ -20,6 +20,13 @@ namespace EscolarApi.Mapper
                 CursoNombre = ins.Curso?.Materia != null
                     ? $"{ins.Curso.Materia.Nombre} ({ins.Curso.Docente?.Nombre})"
                     : "Curso no cargado",
+
+                DiaSemana = ins.Curso?.DiaSemana,
+                Aula = ins.Curso?.Aula,
+                HorarioCompleto = ins.Curso != null
+                ? $"{ins.Curso.DiaSemana} {ins.Curso.HoraInicio:hh\\:mm} - {ins.Curso.HoraFin:hh\\:mm}"
+                : "Sin horario",
+
                 FechaInscripcion = ins.FechaInscripcion,
                 Estatus = ins.Estatus,
                 CalificacionFinal = ins.CalificacionFinal,
