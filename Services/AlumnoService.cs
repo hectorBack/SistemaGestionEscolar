@@ -119,17 +119,36 @@ namespace EscolarApi.Services
 
             if (alumno == null) return false;
 
-            // 1. Desactivar al Alumno
-            alumno.Activo = false;
+            // Iniciamos transacción para asegurar consistencia
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            // 2. Desactivar su cuenta de acceso (Importante)
-            if (alumno.Usuario != null)
+            try
             {
-                alumno.Usuario.Activo = false;
-            }
+                // 1. Desactivar al Alumno (Borrado Lógico)
+                alumno.Activo = false;
 
-            _context.Alumnos.Update(alumno);
-            return await _context.SaveChangesAsync() > 0;
+                // 2. Desactivar su cuenta de acceso (Seguridad)
+                if (alumno.Usuario != null)
+                {
+                    alumno.Usuario.Activo = false;
+                }
+
+                _context.Alumnos.Update(alumno);
+
+                // Guardamos los cambios
+                await _context.SaveChangesAsync();
+
+                // Confirmamos la operación
+                await transaction.CommitAsync();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                // Si algo falla (error de red, db, etc.), revertimos todo
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<IEnumerable<AlumnoResponse>> ObtenerAlumnosPorCurso(int cursoId)
