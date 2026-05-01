@@ -21,34 +21,42 @@ namespace EscolarApi.Services
 
         public async Task<bool> ActualizarDocente(int id, DocenteRequest request)
         {
-            var docente = await _context.Docentes
-                .Include(d => d.Usuario)
-                .FirstOrDefaultAsync(d => d.Id == id);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var docente = await _context.Docentes
+                    .Include(d => d.Usuario)
+                    .FirstOrDefaultAsync(d => d.Id == id);
 
-            if (docente == null) return false;
+                if (docente == null) return false;
 
-            // Validar que el nuevo email no lo tenga otro usuario
-            if (docente.Usuario.Email != request.Email &&
-                await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
-                throw new Exception("El nuevo correo ya está en uso por otro usuario.");
+                // Validar correo único
+                if (docente.Usuario.Email != request.Email &&
+                    await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
+                    throw new Exception("El nuevo correo ya está en uso por otro usuario.");
 
-            // Actualizar datos del Docente
-            docente.Nombre = request.Nombre;
-            docente.Apellido = request.Apellido;
-            docente.Especialidad = request.Especialidad;
-            docente.NumeroEmpleado = request.NumeroEmpleado;
+                // Actualizar Docente
+                docente.Nombre = request.Nombre;
+                docente.Apellido = request.Apellido;
+                docente.Especialidad = request.Especialidad;
+                docente.NumeroEmpleado = request.NumeroEmpleado;
 
-            // Actualizar Usuario asociado
-            docente.Usuario.Email = request.Email;
+                // Actualizar Usuario
+                docente.Usuario.Email = request.Email;
+                if (!string.IsNullOrEmpty(request.Password))
+                    docente.Usuario.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-            // Solo actualizar password si se proporciona uno nuevo
-            if (!string.IsNullOrEmpty(request.Password))
-                docente.Usuario.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-            _context.Docentes.Update(docente);
-            return await _context.SaveChangesAsync() > 0;
+                _context.Docentes.Update(docente);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
-
         public async Task<DocenteResponse> CrearDocente(DocenteRequest request)
         {
             if (await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
@@ -99,45 +107,58 @@ namespace EscolarApi.Services
         //Eliminar Docente con Borrado Logico
         public async Task<bool> EliminarDocente(int id)
         {
-            var docente = await _context.Docentes.FindAsync(id);
+            var docente = await _context.Docentes.Include(d => d.Usuario).FirstOrDefaultAsync(d => d.Id == id);
             if (docente == null) return false;
 
-            // Borrado Lógico
-            docente.Activo = false;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Borrado Lógico del Docente
+                docente.Activo = false;
 
-            _context.Docentes.Update(docente);
-            return await _context.SaveChangesAsync() > 0;
+                // ¡Mejora! También desactivamos al Usuario para que no pueda loguearse
+                if (docente.Usuario != null)
+                {
+                    docente.Usuario.Activo = false; // Asumiendo que tu tabla Usuarios tiene este campo
+                }
+
+                _context.Docentes.Update(docente);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<EstadisticasDocenteResponse> ObtenerEstadisticas()
         {
-            // Obtenemos solo los datos necesarios de la base de datos
-            var docentes = await _context.Docentes.ToListAsync();
+            // Dejamos que la base de datos cuente, no el servidor de C#
+            var total = await _context.Docentes.CountAsync();
+            if (total == 0) return new EstadisticasDocenteResponse();
 
-            if (!docentes.Any())
+            var activos = await _context.Docentes.CountAsync(d => d.Activo);
+
+            var conteoEspecialidad = await _context.Docentes
+                .GroupBy(d => d.Especialidad ?? "Otras")
+                .Select(g => new EspecialidadCount
+                {
+                    Especialidad = g.Key,
+                    Cantidad = g.Count()
+                })
+                .OrderByDescending(c => c.Cantidad)
+                .ToListAsync();
+
+            return new EstadisticasDocenteResponse
             {
-                return new EstadisticasDocenteResponse();
-            }
-
-            var stats = new EstadisticasDocenteResponse
-            {
-                TotalDocentes = docentes.Count,
-                DocentesActivos = docentes.Count(d => d.Activo),
-                DocentesInactivos = docentes.Count(d => !d.Activo),
-
-                // Agrupamos por especialidad y contamos cuántos hay en cada una
-                ConteoPorEspecialidad = docentes
-                    .GroupBy(d => d.Especialidad ?? "Otras")
-                    .Select(g => new EspecialidadCount
-                    {
-                        Especialidad = g.Key,
-                        Cantidad = g.Count()
-                    })
-                    .OrderByDescending(c => c.Cantidad)
-                    .ToList()
+                TotalDocentes = total,
+                DocentesActivos = activos,
+                DocentesInactivos = total - activos,
+                ConteoPorEspecialidad = conteoEspecialidad
             };
-
-            return stats;
         }
 
         public async Task<DocenteResponse> ObtenerPorId(int id)
