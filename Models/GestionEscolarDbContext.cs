@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EscolarApi.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace EscolarApi.models;
@@ -26,6 +27,8 @@ public partial class GestionEscolarDbContext : DbContext
     public virtual DbSet<Materias> Materias { get; set; }
 
     public virtual DbSet<Usuarios> Usuarios { get; set; }
+
+    public virtual DbSet<Asistencias> Asistencias { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer("Name=ConnectionStrings:BD_ESCOLAR");
@@ -123,6 +126,26 @@ public partial class GestionEscolarDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict); // Evita que al borrar una materia se borren las dependientes
         });
 
+        // Configuración para la tabla Asistencias
+        modelBuilder.Entity<Asistencias>(entity =>
+        {
+            entity.ToTable("Asistencias");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Estatus)
+                .IsRequired()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Fecha)
+                .HasColumnType("date"); // Para que en SQL sea DATE y no DATETIME
+
+            // Relación: Una Inscripción tiene muchas Asistencias
+            entity.HasOne(d => d.Inscripcion)
+                .WithMany() // O si agregas ICollection<Asistencias> en Inscripciones, úsalo aquí
+                .HasForeignKey(d => d.InscripcionId)
+                .OnDelete(DeleteBehavior.Cascade); // Si se borra la inscripción, se borran las asistencias
+        });
+
         modelBuilder.Entity<Usuarios>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Usuarios__3214EC271B75B542");
@@ -140,6 +163,8 @@ public partial class GestionEscolarDbContext : DbContext
 
         OnModelCreatingPartial(modelBuilder);
     }
+
+
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
