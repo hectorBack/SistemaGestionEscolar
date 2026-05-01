@@ -102,10 +102,27 @@ namespace EscolarApi.Controllers
 
         // 7. Ver el Kardex de un alumno
         [HttpGet("{id}/kardex")]
-        [Authorize(Roles = "Admin,Docente")]
-        public async Task<IActionResult> GetKardex(int id)
+        [Authorize(Roles = "Admin,Docente,Alumno")]
+        public async Task<IActionResult> ObtenerKardex(int id)
         {
+            // 1. Extraer información del Token JWT
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            // 2. Validación de Seguridad: Si es Alumno, solo puede ver su propio Kardex
+            if (userRole == "Alumno")
+            {
+                if (userIdClaim != id.ToString())
+                {
+                    return Forbid("No tienes permiso para consultar el historial académico de otro alumno.");
+                }
+            }
+
+            // 3. Llamada al servicio (que ya optimizamos antes)
             var kardex = await _alumnoService.ObtenerKardex(id);
+
+            if (kardex == null) return NotFound("No se encontró el historial para el alumno especificado.");
+
             return Ok(kardex);
         }
 
