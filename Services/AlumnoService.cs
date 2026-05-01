@@ -21,17 +21,52 @@ namespace EscolarApi.Services
 
         public async Task<bool> ActualizarAlumno(int id, AlumnoRequest request)
         {
-            var alumno = await _context.Alumnos.FindAsync(id);
-            if (alumno == null) return false;
+            // Iniciamos transacción para proteger ambas tablas
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            alumno.Nombre = request.Nombre;
-            alumno.Apellido = request.Apellido;
-            alumno.Genero = request.Genero;
-            alumno.FechaNacimiento = request.FechaNacimiento;
-            alumno.Matricula = request.Matricula;
+            try
+            {
+                // 1. Buscamos al alumno incluyendo su Usuario
+                var alumno = await _context.Alumnos
+                    .Include(a => a.Usuario)
+                    .FirstOrDefaultAsync(a => a.Id == id);
 
-            _context.Alumnos.Update(alumno);
-            return await _context.SaveChangesAsync() > 0;
+                if (alumno == null) return false;
+
+                // 2. Validar que el nuevo correo no esté en uso por nadie más
+                if (alumno.Usuario.Email != request.Email &&
+                    await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
+                    throw new Exception("El nuevo correo electrónico ya está en uso por otro usuario.");
+
+                // 3. Actualizar datos del Alumno
+                alumno.Nombre = request.Nombre;
+                alumno.Apellido = request.Apellido;
+                alumno.Genero = request.Genero;
+                alumno.FechaNacimiento = request.FechaNacimiento;
+                alumno.Matricula = request.Matricula;
+
+                // 4. Actualizar datos del Usuario asociado
+                alumno.Usuario.Email = request.Email;
+
+                // Solo actualizar password si se proporciona uno nuevo en el request
+                if (!string.IsNullOrEmpty(request.Password))
+                {
+                    alumno.Usuario.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                }
+
+                _context.Alumnos.Update(alumno);
+                await _context.SaveChangesAsync();
+
+                // Confirmamos los cambios en ambas tablas
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                // Si algo sale mal, no se guarda nada
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public int CalcularEdad(DateTime fechaNacimiento)
@@ -153,54 +188,54 @@ namespace EscolarApi.Services
 
         public async Task<IEnumerable<AlumnoResponse>> ObtenerAlumnosPorCurso(int cursoId)
         {
-            var inscritos = await _context.Inscripciones
-                .Include(i => i.Alumno)
-                    .ThenInclude(a => a.Usuario)
+            var alumnos = await _context.Inscripciones
+                .AsNoTracking()
                 .Where(i => i.CursoId == cursoId)
+                .Select(i => i.Alumno)
+                .Include(a => a.Usuario) // Necesario para el Mapper si pide Email
                 .ToListAsync();
 
-            // USANDO EL MAPPER
-            return inscritos.Select(i => AlumnoMapper.ToResponse(i.Alumno));
+            return alumnos.Select(a => AlumnoMapper.ToResponse(a));
         }
 
         //Obtener Estadisticas de Alumnos
         public async Task<EstadisticasAlumnoResponse> ObtenerEstadisticas()
         {
-            var alumnos = await _context.Alumnos.ToListAsync();
-            if (!alumnos.Any()) return new EstadisticasAlumnoResponse();
+            var query = _context.Alumnos.AsQueryable();
 
-            // Nota: Aquí se usa el método de cálculo de edad que ahora 
-            // debería ser accesible o estar en una clase de utilidad (Helper)
-            var edades = alumnos.Select(a => CalcularEdadInterno(a.FechaNacimiento));
+            var total = await query.CountAsync();
+            if (total == 0) return new EstadisticasAlumnoResponse();
+
+            var activos = await query.CountAsync(a => a.Activo);
+
+            // Para el promedio de edad, calculamos el promedio de los años de diferencia en SQL
+            var hoy = DateTime.Today;
+            var promedioEdad = await query
+                .Where(a => a.Activo)
+                .Select(a => hoy.Year - a.FechaNacimiento.Year)
+                .AverageAsync();
 
             return new EstadisticasAlumnoResponse
             {
-                TotalAlumnos = alumnos.Count,
-                AlumnosActivos = alumnos.Count(a => a.Activo),
-                AlumnosInactivos = alumnos.Count(a => !a.Activo),
-                PromedioEdad = Math.Round(edades.Average(), 2)
+                TotalAlumnos = total,
+                AlumnosActivos = activos,
+                AlumnosInactivos = total - activos,
+                PromedioEdad = Math.Round(promedioEdad, 2)
             };
-        }
-
-        // Método auxiliar para estadísticas
-        private int CalcularEdadInterno(DateTime fecha)
-        {
-            var hoy = DateTime.Today;
-            var edad = hoy.Year - fecha.Year;
-            if (fecha.Date > hoy.AddYears(-edad)) edad--;
-            return edad;
         }
 
         public async Task<object> ObtenerKardex(int alumnoId)
         {
             return await _context.Inscripciones
+                 .AsNoTracking()
                  .Where(i => i.AlumnoId == alumnoId)
                  .Select(i => new
                  {
-                     Materia = i.Curso.Materia.Nombre,
+                     Materia = i.Curso.Materia.Nombre ?? "Sin nombre",
                      Ciclo = i.Curso.CicloEscolar,
                      Calificacion = i.CalificacionFinal ?? 0,
-                     Profesor = i.Curso.Docente.Nombre
+                     // Usamos concatenación simple para el nombre del profesor
+                     Profesor = i.Curso.Docente.Nombre + " " + i.Curso.Docente.Apellido
                  }).ToListAsync();
         }
 
