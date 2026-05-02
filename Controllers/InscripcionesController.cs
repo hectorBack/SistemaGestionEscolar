@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EscolarApi.Controllers
 {
-    [Authorize(Roles = "Admin,Docente,Alumno")]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class InscripcionesController : ControllerBase
@@ -23,6 +23,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Docente")]
         public async Task<ActionResult<PagedResponse<InscripcionResponse>>> GetAll(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10,
@@ -43,6 +44,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Alumno")]
         public async Task<ActionResult<InscripcionResponse>> Create([FromBody] InscripcionRequest request)
         {
             // El Service maneja la validación de cupo y el choque de inscripciones duplicadas
@@ -51,6 +53,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPatch("{id}/baja")]
+        [Authorize(Roles = "Admin,Alumno")]
         public async Task<IActionResult> DarDeBaja(int id)
         {
             var resultado = await _inscripcionService.DarDeBaja(id);
@@ -60,15 +63,22 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPatch("{id}/calificar")]
+        [Authorize(Roles = "Admin,Docente")]
         public async Task<IActionResult> Calificar(int id, [FromQuery] decimal calificacion)
         {
-            if (calificacion < 0 || calificacion > 100)
-                return BadRequest(new { Message = "La calificación debe estar entre 0 y 100." });
+            // Extraer ID y Rol del Token
+            var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
 
-            var resultado = await _inscripcionService.AsignarCalificacion(id, calificacion);
-            if (!resultado) return NotFound(new { Message = "No se pudo asignar la calificación." });
-
-            return Ok(new { Message = "Calificación asignada correctamente." });
+            try
+            {
+                var resultado = await _inscripcionService.AsignarCalificacion(id, calificacion, userId, userRole);
+                return Ok(new { Message = "Calificación asignada correctamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
     }
 }

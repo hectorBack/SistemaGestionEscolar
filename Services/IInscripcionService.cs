@@ -21,6 +21,6 @@ namespace EscolarApi.Services
         Task<bool> DarDeBaja(int id);
 
         // Para asigar calificación al final del curso
-        Task<bool> AsignarCalificacion(int id, decimal calificacion);
+        Task<bool> AsignarCalificacion(int id, decimal calificacion, int requestUserId, string requestRole);
     }
 }

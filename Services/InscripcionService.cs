@@ -20,33 +20,40 @@ namespace EscolarApi.Services
             _context = context;
         }
 
-        public async Task<bool> AsignarCalificacion(int id, decimal calificacion)
+        public async Task<bool> AsignarCalificacion(int id, decimal calificacion, int requestUserId, string requestRole)
         {
-            // 1. Buscamos la inscripción por el ID que recibe el método
+            // 1. Buscamos la inscripción con el Curso incluido
             var inscripcion = await _context.Inscripciones
-                .Include(i => i.Curso) // Opcional: por si quieres validar algo del curso
+                .Include(i => i.Curso)
                 .FirstOrDefaultAsync(i => i.Id == id && i.Activo);
 
-            // 2. Validaciones de seguridad
             if (inscripcion == null)
                 throw new Exception("No se encontró la inscripción o no está activa.");
 
-            if (inscripcion.Estatus == "Finalizado")
-                throw new Exception("Esta materia ya tiene una calificación asentada y está finalizada.");
+            // --- VALIDACIÓN DE SEGURIDAD CRÍTICA ---
+            if (requestRole == "Docente")
+            {
+                // Buscamos el ID del Docente asociado al usuario logueado
+                var docente = await _context.Docentes.FirstOrDefaultAsync(d => d.UsuarioId == requestUserId);
 
-            // 3. Validar el rango (asumiendo escala 0-100)
+                if (docente == null || inscripcion.Curso.DocenteId != docente.Id)
+                {
+                    throw new Exception("No tienes permiso para calificar en un curso que no impartes.");
+                }
+            }
+
+            // 2. Resto de validaciones de negocio
+            if (inscripcion.Estatus == "Finalizado")
+                throw new Exception("Esta materia ya tiene una calificación asentada.");
+
             if (calificacion < 0 || calificacion > 100)
                 throw new Exception("La calificación debe estar en un rango de 0 a 100.");
 
-            // 4. Actualizar los campos
+            // 3. Actualizar
             inscripcion.CalificacionFinal = calificacion;
-
-            // Cambiamos el estatus a Finalizado para que cuente como materia cursada
             inscripcion.Estatus = "Finalizado";
 
-            _context.Inscripciones.Update(inscripcion);
-
-            // 5. Guardar cambios y retornar éxito
+            // No hace falta el .Update(inscripcion) si ya está trackeado por FirstOrDefault
             return await _context.SaveChangesAsync() > 0;
         }
 

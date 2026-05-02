@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EscolarApi.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Docente")]
     [ApiController]
     [Route("api/[controller]")]
     public class DocenteController : ControllerBase
@@ -23,6 +23,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<PagedResponse<DocenteResponse>>> GetAll(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10,
@@ -50,6 +51,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<DocenteResponse>> Create([FromBody] DocenteRequest request)
         {
             // Las validaciones de DataAnnotations (como [Required]) se ejecutan automáticamente
@@ -59,6 +61,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] DocenteRequest request)
         {
             var actualizado = await _docenteService.ActualizarDocente(id, request);
@@ -68,6 +71,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var eliminado = await _docenteService.EliminarDocente(id);
