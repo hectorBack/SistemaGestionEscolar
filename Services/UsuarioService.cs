@@ -50,20 +50,22 @@ namespace EscolarApi.Services.Impl
         }
         public async Task<UsuarioResponse?> Login(LoginRequest request)
         {
+            // 1. Buscamos solo usuarios activos y usamos el email
             var usuario = await _context.Usuarios
                 .FirstOrDefaultAsync(u => u.Email == request.Email && u.Activo);
 
             if (usuario == null) return null;
 
+            // 2. Verificación de password
             if (!BCrypt.Net.BCrypt.Verify(request.Password, usuario.Password))
                 return null;
 
-            // Actualizar fecha de último acceso
+            // 3. Actualizar último acceso (sin rastrear todo el objeto si no es necesario)
             usuario.UltimoAcceso = DateTime.Now;
             _context.Usuarios.Update(usuario);
             await _context.SaveChangesAsync();
 
-            // GENERAMOS EL TOKEN
+            // 4. Generar token con UTC
             string tokenCreado = GenerarToken(usuario);
 
             return UsuarioMapper.ToResponse(usuario, tokenCreado);
@@ -86,9 +88,9 @@ namespace EscolarApi.Services.Impl
 
         public async Task<PagedResponse<UsuarioResponse>> ObtenerTodos(int pageNumber, int pageSize, string? rol, bool? activo)
         {
-            var query = _context.Usuarios.AsQueryable();
+            // Agregamos AsNoTracking para velocidad
+            var query = _context.Usuarios.AsNoTracking().AsQueryable();
 
-            // Filtros opcionales
             if (!string.IsNullOrEmpty(rol))
                 query = query.Where(u => u.Rol == rol);
 
@@ -135,8 +137,7 @@ namespace EscolarApi.Services.Impl
 
         private string GenerarToken(Usuarios usuario)
         {
-            // Agregamos ?? string.Empty para evitar el nulo
-            var jwtKey = _config.GetSection("Jwt:Key").Value ?? string.Empty;
+            var jwtKey = _config.GetSection("Jwt:Key").Value ?? throw new Exception("JWT Key no configurada");
             var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 
             var claims = new ClaimsIdentity();
@@ -147,7 +148,7 @@ namespace EscolarApi.Services.Impl
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = claims,
-                // Agregamos una validación para la duración
+                // IMPORTANTE: Usar UtcNow para consistencia global
                 Expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config.GetSection("Jwt:DurationInMinutes").Value ?? "60")),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256Signature)
             };

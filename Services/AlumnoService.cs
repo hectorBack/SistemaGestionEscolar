@@ -33,6 +33,11 @@ namespace EscolarApi.Services
 
                 if (alumno == null) return false;
 
+                // Validar que la nueva matrícula no la tenga otro alumno
+                if (alumno.Matricula != request.Matricula &&
+                    await _context.Alumnos.AnyAsync(a => a.Matricula == request.Matricula))
+                    throw new Exception("La matrícula ya está asignada a otro alumno.");
+
                 // 2. Validar que el nuevo correo no esté en uso por nadie más
                 if (alumno.Usuario.Email != request.Email &&
                     await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
@@ -147,42 +152,40 @@ namespace EscolarApi.Services
 
         public async Task<bool> EliminarAlumno(int id)
         {
-            // Usamos Include para traer al usuario relacionado de una vez
             var alumno = await _context.Alumnos
                 .Include(a => a.Usuario)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (alumno == null) return false;
 
-            // Iniciamos transacción para asegurar consistencia
+            // 1. Validar que no deje grupos a medias
+            var tieneInscripciones = await _context.Inscripciones
+                .AnyAsync(i => i.AlumnoId == id && i.Activo);
+
+            if (tieneInscripciones)
+                throw new Exception("No se puede eliminar un alumno con inscripciones activas.");
+
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // 1. Desactivar al Alumno (Borrado Lógico)
                 alumno.Activo = false;
 
-                // 2. Desactivar su cuenta de acceso (Seguridad)
                 if (alumno.Usuario != null)
                 {
                     alumno.Usuario.Activo = false;
                 }
 
-                _context.Alumnos.Update(alumno);
-
-                // Guardamos los cambios
+                // No hace falta el .Update(alumno), EF lo hace por ti
                 await _context.SaveChangesAsync();
-
-                // Confirmamos la operación
                 await transaction.CommitAsync();
 
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Si algo falla (error de red, db, etc.), revertimos todo
                 await transaction.RollbackAsync();
-                throw;
+                throw new Exception($"Error al procesar la baja del alumno: {ex.Message}");
             }
         }
 
