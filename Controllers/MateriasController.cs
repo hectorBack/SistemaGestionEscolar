@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EscolarApi.Controllers
 {
-    [Authorize(Roles = "Admin,Docente,Alumno")]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class MateriasController : ControllerBase
@@ -23,6 +23,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Docente,Alumno")]
         public async Task<ActionResult<PagedResponse<MateriasResponse>>> GetAll(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10,
@@ -34,6 +35,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "Admin,Docente,Alumno")]
         public async Task<ActionResult<MateriasResponse>> GetById(int id)
         {
             var materia = await _materiaService.ObtenerPorId(id);
@@ -43,6 +45,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpGet("codigo/{codigo}")]
+        [Authorize(Roles = "Admin,Docente,Alumno")]
         public async Task<ActionResult<MateriasResponse>> GetByCodigo(string codigo)
         {
             var materia = await _materiaService.ObtenerPorCodigo(codigo);
@@ -52,6 +55,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpGet("estadisticas")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<EstadisticasMateriaResponse>> GetStats()
         {
             var stats = await _materiaService.ObtenerEstadisticas();
@@ -59,6 +63,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<MateriasResponse>> Create([FromBody] MateriaRequest request)
         {
             var nuevaMateria = await _materiaService.CrearMateria(request);
@@ -66,6 +71,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] MateriaRequest request)
         {
             var actualizado = await _materiaService.Actualizar(id, request);
@@ -75,6 +81,7 @@ namespace EscolarApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var eliminado = await _materiaService.Eliminar(id);
