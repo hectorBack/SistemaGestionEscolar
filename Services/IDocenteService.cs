@@ -15,5 +15,7 @@ namespace EscolarApi.Services
         Task<bool> ActualizarDocente(int id, DocenteRequest request);
         Task<bool> EliminarDocente(int id); // Borrado lógico
         Task<EstadisticasDocenteResponse> ObtenerEstadisticas();
+
+        Task<bool> RestaurarDocente(int id);
     }
 }

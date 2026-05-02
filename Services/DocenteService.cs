@@ -220,5 +220,42 @@ namespace EscolarApi.Services
 
             return new PagedResponse<DocenteResponse>(data, totalRecords, pageNumber, pageSize);
         }
+
+        public async Task<bool> RestaurarDocente(int id)
+        {
+            // Traemos al docente incluyendo su usuario, aunque estén desactivados
+            var docente = await _context.Docentes
+                .Include(d => d.Usuario)
+                .IgnoreQueryFilters() // IMPORTANTE: Si usas Global Query Filters para los Activos, esto los encuentra
+                .FirstOrDefaultAsync(d => d.Id == id);
+
+            if (docente == null) return false;
+
+            // Si ya está activo, no hacemos nada
+            if (docente.Activo) return true;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Reactivar Perfil
+                docente.Activo = true;
+
+                // 2. Reactivar Usuario para que pueda volver a loguearse
+                if (docente.Usuario != null)
+                {
+                    docente.Usuario.Activo = true;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception($"Error al restaurar el docente: {ex.Message}");
+            }
+        }
     }
 }

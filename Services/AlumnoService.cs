@@ -286,5 +286,41 @@ namespace EscolarApi.Services
 
             return new PagedResponse<AlumnoResponse>(data, totalRecords, pageNumber, pageSize);
         }
+
+        public async Task<bool> RestaurarAlumno(int id)
+        {
+            // Usamos IgnoreQueryFilters para poder encontrar al alumno desactivado
+            var alumno = await _context.Alumnos
+                .IgnoreQueryFilters()
+                .Include(a => a.Usuario)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (alumno == null) return false;
+
+            // Si ya está activo, no hay nada que restaurar
+            if (alumno.Activo) return true;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Reactivar perfil
+                alumno.Activo = true;
+
+                // 2. Reactivar cuenta de usuario
+                if (alumno.Usuario != null)
+                {
+                    alumno.Usuario.Activo = true;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception($"Error al restaurar alumno: {ex.Message}");
+            }
+        }
     }
 }

@@ -19,8 +19,8 @@ namespace EscolarApi.Services
         Task<bool> CambiarPassword(int alumnoId, string nuevaPassword);
         Task<IEnumerable<AlumnoResponse>> ObtenerAlumnosPorCurso(int cursoId);
         int CalcularEdad(DateTime fechaNacimiento);
-
         Task<EstadisticasAlumnoResponse> ObtenerEstadisticas();
+        Task<bool> RestaurarAlumno(int id);
 
     }
 }

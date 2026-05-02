@@ -161,6 +161,10 @@ public partial class GestionEscolarDbContext : DbContext
             entity.Property(e => e.Rol).HasMaxLength(20);
         });
 
+        modelBuilder.Entity<Usuarios>().HasQueryFilter(u => u.Activo);
+        modelBuilder.Entity<Alumnos>().HasQueryFilter(a => a.Activo);
+        modelBuilder.Entity<Docentes>().HasQueryFilter(d => d.Activo);
+
         OnModelCreatingPartial(modelBuilder);
     }
 

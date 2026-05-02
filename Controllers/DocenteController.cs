@@ -75,5 +75,15 @@ namespace EscolarApi.Controllers
 
             return NoContent();
         }
+
+        [HttpPatch("{id}/restaurar")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Restaurar(int id)
+        {
+            var resultado = await _docenteService.RestaurarDocente(id);
+            if (!resultado) return NotFound("No se encontró el docente o ya está activo.");
+
+            return Ok(new { Message = "Docente y cuenta de usuario reactivados correctamente." });
+        }
     }
 }
