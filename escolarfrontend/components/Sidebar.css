@@ -1,0 +1,139 @@
+/* Sidebar.css */
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 16rem; /* 64 en Tailwind */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-card);
+  border-right: 1px solid var(--border);
+  color: var(--text-main);
+  transition: all 0.3s ease;
+  z-index: 50;
+}
+
+.sidebar.collapsed {
+  width: 5rem; /* 80px cuando está cerrado */
+}
+
+.toggle-btn {
+  position: absolute;
+  right: -12px;
+  top: 20px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.nav-icon {
+  font-size: 1.2rem;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Ocultar texto suavemente */
+.sidebar-header h2,
+.nav-item span:not(.nav-icon) {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0;
+}
+
+.sidebar-role {
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 1rem;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  color: var(--text-main);
+}
+
+.nav-item:hover {
+  background-color: var(--input-bg);
+  transform: translateX(4px);
+}
+
+.nav-item.active {
+  background-color: var(--accent);
+  color: #ffffff !important;
+}
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.footer-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background-color: var(--input-bg);
+  color: var(--text-main);
+}
+
+.footer-btn:hover {
+  filter: brightness(0.9);
+}
+
+.btn-logout {
+  background-color: transparent;
+  color: #ef4444;
+}
+
+.btn-logout:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
