@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://localhost:5063/api';
+const API_BASE_URL = 'http://localhost:5063/api';
 
 export const apiFetch = async (endpoint, options = {}) => {
     // En Next.js Client Components usamos localStorage

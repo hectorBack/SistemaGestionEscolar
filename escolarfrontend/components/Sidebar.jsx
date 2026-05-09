@@ -6,7 +6,7 @@ import { menuItems } from '@/lib/navConfig';
 import { useTheme } from '@/components/ThemeProvider';
 import './Sidebar.css';
 
-export default function Sidebar({ isCollapsed, setIsCollapsed }) { // Recibe props para sincronizar con el layout
+export default function Sidebar({ isCollapsed, setIsCollapsed }) {
     const [role, setRole] = useState(null);
     const { theme, toggleTheme } = useTheme();
     const router = useRouter();
@@ -21,24 +21,34 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) { // Recibe pro
         }
     }, [router]);
 
+    const handleLogout = () => {
+        localStorage.removeItem('userRole');
+        // Si manejas tokens de tu backend en Java, bórralo aquí:
+        // localStorage.removeItem('token'); 
+        router.push('/login');
+    };
+
     if (!role) return null;
     const currentMenu = menuItems[role] || [];
 
     return (
         <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-            {/* Botón para esconder/mostrar */}
+            {/* Botón Toggle para expandir/contraer */}
             <button
                 className="toggle-btn"
                 onClick={() => setIsCollapsed(!isCollapsed)}
+                aria-label="Toggle Sidebar"
             >
                 {isCollapsed ? '→' : '←'}
             </button>
 
+            {/* Cabecera: Logo y Rol */}
             <div className="sidebar-header">
                 {!isCollapsed && <h2 className="sidebar-logo">Escolar Pro</h2>}
                 <p className="sidebar-role">{isCollapsed ? role[0] : role}</p>
             </div>
 
+            {/* Navegación dinámica según el rol */}
             <nav className="sidebar-nav">
                 {currentMenu.map((item) => {
                     const isActive = pathname === item.path;
@@ -56,10 +66,18 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) { // Recibe pro
                 })}
             </nav>
 
+            {/* Footer: Configuración y Logout */}
             <div className="sidebar-footer">
-                <button onClick={toggleTheme} className="footer-btn">
-                    <span>{theme === 'light' ? '🌙' : '☀️'}</span>
+                {/* Selector de Tema */}
+                <button onClick={toggleTheme} className="footer-btn" title="Cambiar tema">
+                    <span className="nav-icon">{theme === 'light' ? '🌙' : '☀️'}</span>
                     {!isCollapsed && <span>Modo {theme === 'light' ? 'Oscuro' : 'Claro'}</span>}
+                </button>
+
+                {/* Botón Cerrar Sesión */}
+                <button onClick={handleLogout} className="footer-btn btn-logout" title="Cerrar sesión">
+                    <span className="nav-icon">🚪</span>
+                    {!isCollapsed && <span>Cerrar Sesión</span>}
                 </button>
             </div>
         </aside>
