@@ -1,14 +1,12 @@
 /* Sidebar.css */
 
-:root {
-  /* Variables de respaldo por si no cargan las globales */
+.sidebar {
+  /* Mueve las variables de medida aquí dentro */
   --sidebar-width: 16rem;
   --sidebar-collapsed-width: 5rem;
   --transition-speed: 0.3s;
-  --danger: #ef4444; /* Color rojo para el botón de cerrar sesión */
-}
+  --danger: #ef4444;
 
-.sidebar {
   position: fixed;
   left: 0;
   top: 0;
@@ -16,12 +14,17 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-card);
+
+  /* USAR LAS VARIABLES DE GLOBALS.CSS */
+  background-color: var(--bg-card) !important;
   border-right: 1px solid var(--border);
   color: var(--text-main);
-  transition: width var(--transition-speed) ease;
+
+  transition:
+    width var(--transition-speed) ease,
+    background-color 0.3s ease;
   z-index: 50;
-  overflow-x: hidden; /* CRÍTICO: Evita que el texto se salga al colapsar */
+  overflow-x: hidden;
 }
 
 .sidebar.collapsed {

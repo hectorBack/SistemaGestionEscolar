@@ -1,4 +1,4 @@
-// app/page.jsx
+// app/page.js
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,9 +13,12 @@ export default function RootPage() {
     if (!token) {
       // URL limpia gracias al Route Group (auth)
       router.push('/login');
-    } else {
-      // URL limpia gracias al Route Group (dashboard)
-      router.push(`/${role.toLowerCase()}`);
+    } try {
+      const targetPath = `/${role.toLowerCase()}`;
+      router.push(targetPath);
+    } catch (error) {
+      console.error("Error al redireccionar:", error);
+      router.push('/login');
     }
   }, [router]);
 

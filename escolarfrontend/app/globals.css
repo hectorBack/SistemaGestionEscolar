@@ -33,3 +33,14 @@ body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* globals.css */
+[data-theme="dark"] .sidebar {
+  background-color: #1e293b !important; /* Color dark manual para asegurar */
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .nav-item {
+  color: #f1f5f9 !important;
+}

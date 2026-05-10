@@ -88,3 +88,93 @@
 .btn-login:hover {
   background-color: var(--accent-hover);
 }
+
+/* Nuevas reglas para validaciones */
+.input-error {
+  border-color: #dc2626 !important; /* Rojo */
+  background-color: #fffafb !important;
+}
+
+.error-message {
+  background-color: #fee2e2;
+  color: #dc2626;
+  padding: 0.75rem;
+  border-radius: 8px;
+  bottom: 1rem;
+  font-size: 0.875rem;
+  border: 1px solid #fecaca;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Soporte para modo oscuro en errores */
+[data-theme="dark"] .error-message {
+  background-color: #450a0a;
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+
+/* 1. Estilos para el contenedor del password y el botón del ojo */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  padding: 5px;
+}
+
+.toggle-password:hover {
+  color: var(--accent);
+}
+
+/* 2. Estilo para el aviso de Caps Lock (Mayúsculas) */
+.caps-lock-warning {
+  color: #f59e0b; /* Ambar/Naranja */
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 3. Mejora para el botón deshabilitado */
+.btn-login:disabled {
+  background-color: var(--border);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* 4. Efecto de transición suave para los inputs */
+.form-group input {
+  transition:
+    border-color 0.2s,
+    background-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.form-group input:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); /* Resplandor azul sutil */
+}
+
+/* 5. Ajuste para el input de error en modo oscuro */
+[data-theme="dark"] .input-error {
+  background-color: #450a0a22 !important;
+  border-color: #ef4444 !important;
+}

@@ -3,10 +3,10 @@ import { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext();
 
+// AGREGA "default" AQUÍ:
 export default function ThemeProvider({ children }) {
     const [theme, setTheme] = useState('light');
 
-    // Al cargar, leer la preferencia guardada
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') || 'light';
         setTheme(savedTheme);
@@ -16,8 +16,8 @@ export default function ThemeProvider({ children }) {
     const toggleTheme = () => {
         const newTheme = theme === 'light' ? 'dark' : 'light';
         setTheme(newTheme);
-        document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
+        document.documentElement.setAttribute('data-theme', newTheme);
     };
 
     return (
